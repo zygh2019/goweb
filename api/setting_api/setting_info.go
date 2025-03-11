@@ -1,7 +1,13 @@
 package setting_api
 
-import "github.com/gin-gonic/gin"
+import (
+	"awesomeProject1/models/res"
+	"github.com/gin-gonic/gin"
+)
 
 func (SettingApi) SettingInfoView(c *gin.Context) {
-	c.JSON(200, gin.H{"msg": "SettingInfoView"})
+	res.OkWithData(map[string]any{
+		"id": 123333,
+	}, c)
+
 }
