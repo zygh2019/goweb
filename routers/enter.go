@@ -5,12 +5,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type RouterGroup struct {
+	*gin.RouterGroup
+}
+
 func InitRouter() *gin.Engine {
 	gin.SetMode(globle.Config.System.Env)
 	router := gin.Default()
+	//顶层
+	group := router.Group("api")
+	routerGroup := RouterGroup{group}
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "pong"})
-	})
+	routerGroup.SettingRouters()
+
 	return router
 }
