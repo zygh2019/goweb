@@ -74,7 +74,15 @@ func (SettingApi) SettingInfoView3(c *gin.Context) {
 	res.OkWithData(email, c)
 }
 func (SettingApi) SettingInfoView4(c *gin.Context) {
+	//文件上传 和多文件上传
+	c.FormFile("file1")
+	mult, _ := c.MultipartForm()
+	files := mult.File["file"]
+	for _, file := range files {
+		res.OkWithData(file, c)
 
+	}
+	return
 	email := Email{}
 	if err := c.ShouldBind(&email); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
