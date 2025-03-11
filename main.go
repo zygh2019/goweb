@@ -3,13 +3,15 @@ package main
 import (
 	"awesomeProject1/core"
 	"awesomeProject1/globle"
-	"github.com/sirupsen/logrus"
+	"awesomeProject1/routers"
 )
 
 func main() {
-	core.InitConf()
-	core.InitGorm()
-	globle.Log = core.InitLogger()
 
-	logrus.Infof("init default logger")
+	core.InitConf()
+	core.InitLogger()
+	core.InitGorm()
+	server := routers.InitRouter()
+	globle.Log.Info("启动完成", globle.Config.System.GetAddr())
+	server.Run(globle.Config.System.GetAddr())
 }

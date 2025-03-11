@@ -5,14 +5,13 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
 	"time"
 )
 
 func InitGorm() *gorm.DB {
 	//判断配置是否存在
 	if "" == globle.Config.Mysql.Host {
-		log.Fatalln("globle.Config.Mysql.Host is null")
+		globle.Log.Error("globle.Config.Mysql.Host is null")
 		return nil
 	}
 	//链接地址
@@ -30,7 +29,7 @@ func InitGorm() *gorm.DB {
 	})
 	//如果开启失败 报错 并返回
 	if err != nil {
-		log.Fatalln("数据库连接失败 ", err)
+		globle.Log.Error("数据库连接失败 ", err)
 		return nil
 	}
 	sqlDb, _ := db.DB()
@@ -38,5 +37,6 @@ func InitGorm() *gorm.DB {
 	sqlDb.SetMaxOpenConns(globle.Config.Mysql.MaxOpenConns)
 	sqlDb.SetConnMaxLifetime(time.Hour * time.Duration(globle.Config.Mysql.ConnMaxLifetime))
 	globle.DB = db
+	globle.Log.Info("数据库和gorm初始化完成")
 	return db
 }

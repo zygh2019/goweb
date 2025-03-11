@@ -62,6 +62,7 @@ func InitLogger() *logrus.Logger {
 	mlog.SetLevel(level)                                //设置最低的level界别
 	mlog.SetReportCaller(globle.Config.Logger.ShowLine) //开启返回函数名和行号
 	initDefaultLogger()
+	globle.Log = mlog
 	return mlog
 }
 
