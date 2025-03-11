@@ -3,6 +3,7 @@ package setting_api
 import (
 	"awesomeProject1/models/res"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -74,6 +75,7 @@ func (SettingApi) SettingInfoView3(c *gin.Context) {
 	res.OkWithData(email, c)
 }
 func (SettingApi) SettingInfoView4(c *gin.Context) {
+	logrus.Info("我执行了")
 	//文件上传 和多文件上传
 	c.FormFile("file1")
 	mult, _ := c.MultipartForm()
@@ -91,5 +93,6 @@ func (SettingApi) SettingInfoView4(c *gin.Context) {
 		})
 		return
 	}
+	logrus.Info("我执行了")
 	res.OkWithData(email, c)
 }
