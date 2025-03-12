@@ -22,5 +22,6 @@ func (r RouterGroup) SettingRouters() {
 	group.GET("get/:user_id/:a", settingApi.SettingInfoView)
 	group.GET("get2", settingApi.SettingInfoView2)
 	group.POST("get3", settingApi.SettingInfoView3)
-	group.POST("get4", settingApi.SettingInfoView4)
+	group.POST("get4", settingApi.SettingInfoView3)
+	group.POST("insert", settingApi.SettingInfoView5)
 }

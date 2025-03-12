@@ -33,6 +33,10 @@ func FailWithMsg(msg string, c *gin.Context) {
 	//空对象
 	Result(error_code, map[string]any{}, msg, c)
 }
+func Fail(c *gin.Context) {
+	//空对象
+	Result(error_code, map[string]any{}, ErrorMap[ErrorCode(success)], c)
+}
 
 func FailWithCode(code int, msg string, c *gin.Context) {
 	//空对象

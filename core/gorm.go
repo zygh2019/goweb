@@ -5,6 +5,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 	"time"
 )
 
@@ -26,6 +27,10 @@ func InitGorm() *gorm.DB {
 	//开启gorm 并设置自定义日志配置
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: mysqlLogger,
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix:   "",   // 表前缀
+			SingularTable: true, // 禁用表名复数
+		},
 	})
 	//如果开启失败 报错 并返回
 	if err != nil {
