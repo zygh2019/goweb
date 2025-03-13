@@ -3,6 +3,8 @@ package setting_api
 import (
 	"awesomeProject1/globle"
 	"awesomeProject1/models/res"
+	"database/sql/driver"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -77,16 +79,6 @@ func (SettingApi) SettingInfoView3(c *gin.Context) {
 	res.OkWithData(email, c)
 }
 
-type UserDetail struct {
-	ID uint64 `json:"id" form:"id" gorm:"primary_key"`
-	//不然就是空字符串
-	Name   string `json:"name" form:"name"  gorm:"size:10" binding:"required"`
-	Remark string `json:"remark" form:"remark"  gorm:"type:varchar(10)" binding:"required"`
-	//可以存null
-	EmailStr *string `json:"emailStr" form:"emailStr"  gorm:"type:varchar(10)"`
-	//不能为空默认值是999
-	Password string `json:"password" form:"password" gorm:"type:varchar(10);default:999;comment:密码"  binding:"required"`
-}
 type UserDetailVO struct {
 	ID uint64 `json:"id" form:"id" gorm:"primary_key"`
 	//不然就是空字符串
@@ -140,4 +132,129 @@ func (SettingApi) SettingInfoView5(c *gin.Context) {
 		"wheredat":     use3,
 		"use4":         use4,
 	}, c)
+}
+
+type UserDetail struct {
+	ID uint64 `json:"id" form:"id" gorm:"primary_key"`
+	//不然就是空字符串
+	Name   string `json:"name" form:"name"  gorm:"size:10" binding:"required"`
+	Remark string `json:"remark" form:"remark"  gorm:"type:varchar(10)" binding:"required"`
+	//可以存null
+	EmailStr *string `json:"emailStr" form:"emailStr"  gorm:"type:varchar(10)"`
+	//不能为空默认值是999
+	Password string    `json:"password" form:"password" gorm:"type:varchar(10);default:999;comment:密码"  binding:"required"`
+	Articles []Article `json:"articles" form:"articles"`
+}
+
+type Article struct {
+	ID    uint64 `json:"id" form:"id" gorm:"primary_key"`
+	Title string `json:"title" form:"title" gorm:"size:100" binding:"required"`
+	//不然就是空字符串
+	UserDetailID uint64 `json:"UserDetailId" form:"UserDetailId"  `
+	UserDetail   UserDetail
+}
+
+func (SettingApi) SettingInfoView6(c *gin.Context) {
+
+	var userDetail []UserDetail
+	err := c.ShouldBind(&userDetail)
+	if err != nil {
+		res.FailWithMsg(err.Error(), c)
+		return
+
+	}
+	globle.DB.Debug().Create(&userDetail)
+	var articleDetail Article
+	globle.DB.Debug().Preload("UserDetail").Take(&articleDetail)
+	res.OkWithData(map[string]any{
+		"ID": articleDetail,
+	}, c)
+
+}
+
+type WxConfig struct {
+	ID   uint64 `json:"id" form:"id" gorm:"primary_key"`
+	Info Info   `json:"info" form:"info" gorm:"type:varchar(255)"`
+}
+
+type Info struct {
+	Secret string `json:"secret" form:"secret"`
+	Appid  string `json:"appid" form:"appid"`
+}
+
+func (info *Info) Scan(value any) error {
+	bytes, _ := value.([]byte)
+	return json.Unmarshal(bytes, info)
+}
+
+func (info Info) Value() (driver.Value, error) {
+	return json.Marshal(info)
+}
+
+/*
+*
+自定义类型
+*/
+func (SettingApi) SettingInfoView7(c *gin.Context) {
+	globle.DB.AutoMigrate(&WxConfig{})
+
+	var wxConfig WxConfig
+	err := c.ShouldBind(&wxConfig)
+	if err != nil {
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	globle.DB.Debug().Create(&wxConfig)
+
+	globle.DB.Debug().Take(&wxConfig)
+
+	res.OkWithData(wxConfig, c)
+}
+
+const (
+	ONE   ValueStatus = 1
+	TWO   ValueStatus = 2
+	THREE ValueStatus = 3
+)
+
+type ValueStatus int
+
+func (v ValueStatus) MarshalJSON() ([]byte, error) {
+	var s string
+	switch v {
+	case ONE:
+		s = "第一"
+	case TWO:
+		s = "第二"
+	case THREE:
+		s = "第三"
+	}
+	return json.Marshal(s)
+}
+
+type Order struct {
+	ID     uint64      `json:"id" form:"id" gorm:"primary_key"`
+	Status ValueStatus `json:"status" form:"status" gorm:"size:10" binding:"required"`
+}
+
+// func (o Order) MarshalJson() ([]byte, error) {
+//
+//		return json.Marshal(&struct {
+//			ID     uint64 `json:"id" form:"id" gorm:"primary_key"`
+//			Status int    `json:"status" form:"status" gorm:"size:10" binding:"required"`
+//		}{ID: o.ID, Status: o.Status})
+//	}
+func (SettingApi) SettingInfoView8(c *gin.Context) {
+	globle.DB.AutoMigrate(&Order{})
+	var orders Order
+	err := c.ShouldBind(&orders)
+	if err != nil {
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	globle.DB.Debug().Create(&orders)
+	var ordersView Order
+	globle.DB.Debug().Take(&ordersView)
+	res.OkWithData(ordersView, c)
+
 }

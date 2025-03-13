@@ -24,4 +24,7 @@ func (r RouterGroup) SettingRouters() {
 	group.POST("get3", settingApi.SettingInfoView3)
 	group.POST("get4", settingApi.SettingInfoView3)
 	group.POST("insert", settingApi.SettingInfoView5)
+	group.POST("insert1", settingApi.SettingInfoView6)
+	group.POST("insert2", settingApi.SettingInfoView7)
+	group.POST("insert8", settingApi.SettingInfoView8)
 }
