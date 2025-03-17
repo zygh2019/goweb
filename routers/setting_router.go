@@ -5,9 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type SettingRouter struct {
-}
-
 // 可以传参数的中间件
 func groupMiddle(text string) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -17,6 +14,7 @@ func groupMiddle(text string) gin.HandlerFunc {
 func (r RouterGroup) SettingRouters() {
 	settingApi := api.ApiGroupApp.SettingApi
 	//下面一层
+
 	group := r.Group("/setting")
 	group.Use(groupMiddle("test"))
 	group.GET("get/:user_id/:a", settingApi.SettingInfoView)

@@ -1,4 +1,4 @@
-package eth_client_api
+package geth_api
 
-type EthClientApi struct {
+type GethApi struct {
 }

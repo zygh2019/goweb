@@ -3,9 +3,7 @@ package core
 import (
 	"awesomeProject1/config"
 	"awesomeProject1/globle"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"log"
+	"github.com/spf13/viper"
 )
 
 /*
@@ -13,19 +11,22 @@ import (
 读取yaml文件的配置
 */
 func InitConf() {
-	const ConfigFile = "setting.yaml"
-	//读取配置yaml文件 并且赋值
-	c := &config.Config{}
-	file, err := ioutil.ReadFile(ConfigFile)
+	viper.SetConfigName("setting")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	error := viper.ReadInConfig()
+	if error != nil {
+		panic(error)
+	}
+	c := config.Config{}
+	error = viper.Unmarshal(&c)
+	if error != nil {
 
-	if err != nil {
-		panic(err)
+		panic(error)
 	}
-	err = yaml.Unmarshal(file, c)
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
+	//读取配置yaml文件 并且赋值
+
 	//给全局使用的
-	globle.Config = c
+	globle.Config = &c
 
 }

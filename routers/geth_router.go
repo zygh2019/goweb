@@ -4,14 +4,12 @@ import (
 	"awesomeProject1/api"
 )
 
-type EthClientRouter struct {
-}
-
-
 func (r RouterGroup) EthClientRouters() {
-	ethClientApi := api.ApiGroupApp.EthClientApi
+	gethApi := api.ApiGroupApp.GethApi
 	//下面一层
 	group := r.Group("/eth_client")
-	group.GET("getBlockInfo", ethClientApi.)
+
+	group.GET("/getBlockInfo", gethApi.GetBlock)
+	group.GET("/transactions", gethApi.GetTransactions)
 
 }

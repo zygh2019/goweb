@@ -11,11 +11,19 @@ system:
   host: 0.0.0.0
   port: 8080
   env: release
+
 logger:
   level: info
   prefix: 'goweb'
   director: log
   show_line: true
   log_in_console: true
+
+#geth_gateway:
+#  url: https://ethereum-mainnet.core.chainstack.com
+#  key: 5ba73a21a14d09144449f263a283f6bf
+geth_gateway:
+  url: http://127.0.0.1:7545
+  key:
 
 

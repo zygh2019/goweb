@@ -14,4 +14,5 @@ func main() {
 	server := routers.InitRouter()
 	globle.Log.Info("启动完成", globle.Config.System.GetAddr())
 	server.Run(globle.Config.System.GetAddr())
+
 }

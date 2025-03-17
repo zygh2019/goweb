@@ -17,6 +17,6 @@ func InitRouter() *gin.Engine {
 	routerGroup := RouterGroup{group}
 
 	routerGroup.SettingRouters()
-
+	routerGroup.EthClientRouters()
 	return router
 }
