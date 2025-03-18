@@ -4,11 +4,16 @@ import (
 	"awesomeProject1/globle"
 	"awesomeProject1/models/res"
 	"context"
+	"crypto/ecdsa"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"log"
+	"math"
 	"math/big"
 	"strconv"
 )
@@ -147,4 +152,59 @@ func (a GethApi) TransactionsByBlock(c *gin.Context) {
 	}
 	res.OkWithData(mapReturn, c)
 
+}
+
+type Purse struct {
+	Id               uint   `json:"id" gorm:"primary_key"`
+	PrivateKey       string `json:"privateKey16" gorm:"size:255"`
+	PublicKey        string `json:"publicKey16" gorm:"size:255"`
+	PublicKeyAddress string `json:"publicKey16Address" gorm:"size:255"`
+}
+
+func (a GethApi) CreatePurse(c *gin.Context) {
+	//生成一个随机的私钥
+	privateKey, err := crypto.GenerateKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+	//私钥转换成字节
+	privateKeyBytes := crypto.FromECDSA(privateKey)
+	//转换为16进制
+	privateKeyx16 := hexutil.Encode(privateKeyBytes)[2:]
+	//生成公钥
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	//去除不需要的自负
+	publicKey16 := hexutil.Encode(publicKeyBytes)[4:]
+
+	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+	//创建表
+	globle.DB.AutoMigrate(&Purse{})
+	//创建
+	purse := &Purse{PrivateKey: privateKeyx16, PublicKey: publicKey16, PublicKeyAddress: address}
+	globle.DB.Create(purse)
+	res.OkWithData(purse, c)
+
+}
+
+func (a GethApi) GetBalance(c *gin.Context) {
+	value := c.Query("address")
+	client, err := ethclient.Dial(globle.Config.GethConfig.GetGatewayAddr())
+	account := common.HexToAddress(value)
+	//nil为最新区块的金额
+	balance, err := client.BalanceAt(context.Background(), account, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	/**
+	以太坊中的数字是使用尽可能小的单位来处理的，因为它们是定点精度，在ETH中它是wei。要读取ETH值，您必须做计算wei/10^18。因为我们正在处理大数，我们得导入原生的Gomath和math/big包。这是您做的转换。
+	*/
+	fbalance := new(big.Float)
+	fbalance.SetString(balance.String())
+	ethValue := new(big.Float).Quo(fbalance, big.NewFloat(math.Pow10(18)))
+	res.OkWithData(ethValue, c)
 }

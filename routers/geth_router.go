@@ -12,5 +12,12 @@ func (r RouterGroup) EthClientRouters() {
 	group.GET("/getBlockInfo", gethApi.GetBlock)
 	group.GET("/transactions", gethApi.GetTransactions)
 	group.POST("/transactionsByBlock", gethApi.TransactionsByBlock)
-
+	/**
+	创建钱包
+	*/
+	group.GET("/createPurse", gethApi.CreatePurse)
+	/**
+	查询yu饿
+	*/
+	group.GET("/getBalance", gethApi.GetBalance)
 }
