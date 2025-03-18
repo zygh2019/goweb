@@ -17,7 +17,11 @@ func (r RouterGroup) EthClientRouters() {
 	*/
 	group.GET("/createPurse", gethApi.CreatePurse)
 	/**
-	查询yu饿
+	查询余额
 	*/
 	group.GET("/getBalance", gethApi.GetBalance)
+	/**
+	以太坊转账
+	*/
+	group.POST("/transfer", gethApi.Transfer)
 }

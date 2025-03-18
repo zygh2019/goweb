@@ -203,8 +203,133 @@ func (a GethApi) GetBalance(c *gin.Context) {
 	/**
 	以太坊中的数字是使用尽可能小的单位来处理的，因为它们是定点精度，在ETH中它是wei。要读取ETH值，您必须做计算wei/10^18。因为我们正在处理大数，我们得导入原生的Gomath和math/big包。这是您做的转换。
 	*/
+	res.OkWithData(BigInt2StringBalance(balance), c)
+}
+
+// 进行转换
+func BigInt2StringBalance(balance *big.Int) *big.Float {
 	fbalance := new(big.Float)
 	fbalance.SetString(balance.String())
 	ethValue := new(big.Float).Quo(fbalance, big.NewFloat(math.Pow10(18)))
-	res.OkWithData(ethValue, c)
+	return ethValue
+}
+
+type TransferLog struct {
+	Id          uint   `json:"id" gorm:"primary_key"`
+	FromAddress string `json:"fromAddress" gorm:"size:100"`
+	ToAddress   string `json:"toAddress" gorm:"size:100"`
+	GasLimit    uint64 `json:"gasLimit" gorm:"size:100"`
+	GasPrice    string `json:"gasPrice" gorm:"size:100"`
+	WeiValue    string `json:"weiValue" gorm:"size:100"`
+	EthAmount   string `json:"ethAmount" gorm:"size:100"`
+}
+
+func (a GethApi) Transfer(c *gin.Context) {
+	param := &struct {
+		Sender   string `json:"sender" binding:"required"`
+		Receiver string `json:"receiver" binding:"required"`
+		Amount   string `json:"amount" binding:"required"`
+	}{}
+	err := c.ShouldBind(param)
+	if err != nil {
+		errors := res.ValidateErrors(err, param)
+		logrus.Error(errors)
+		res.FailWithMsg(errors, c)
+		return
+	}
+	client, err := ethclient.Dial(globle.Config.GethConfig.GetGatewayAddr())
+
+	//3.计算publickey
+	privateKey, err := crypto.HexToECDSA(param.Sender)
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+
+	//公要地址
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	//校验金额
+	//1，校验金额
+	balance, err := client.BalanceAt(context.Background(), fromAddress, nil)
+	if err != nil {
+		logrus.Info(err.Error())
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	stringBalance := BigInt2StringBalance(balance)
+	amount := new(big.Float)
+	_, success := amount.SetString(param.Amount)
+	if !success {
+		logrus.Error(success)
+		res.Fail(c)
+		return
+	}
+	// 2.比较 amount 和 stringBalance
+	if stringBalance.Cmp(amount) < 0 {
+		res.FailWithMsg("钱不充足", c)
+		return
+	}
+
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	gasLimit := uint64(21000) // in units
+	// 定义 1 ETH 对应的 wei 值
+	oneETHInWei := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
+	//转换成float类型
+	flowtypeWEi := new(big.Float).SetInt(oneETHInWei)
+	//将param转换成float
+	paramAmount := new(big.Float)
+	paramAmount.SetString(param.Amount)
+	//计算最终的wei值
+	weiAmount := new(big.Int)
+	flowtypeWEi.Mul(flowtypeWEi, paramAmount).Int(weiAmount)
+	//要发送的人的地址
+	toAddress := common.HexToAddress(param.Receiver)
+	tx := types.NewTransaction(nonce, toAddress, weiAmount, gasLimit, gasPrice, nil)
+
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	//交易进行签名
+	signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainID), privateKey)
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	//进行发送
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	globle.DB.AutoMigrate(&TransferLog{})
+
+	transferLog := &TransferLog{
+		FromAddress: fromAddress.String(),
+		ToAddress:   toAddress.String(),
+		GasLimit:    gasLimit,
+		GasPrice:    gasPrice.String(),
+		WeiValue:    weiAmount.String(),
+		EthAmount:   paramAmount.String(),
+	}
+	globle.DB.Create(transferLog)
+	res.OkWithData(transferLog, c)
+
 }
