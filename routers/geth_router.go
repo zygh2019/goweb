@@ -11,5 +11,6 @@ func (r RouterGroup) EthClientRouters() {
 
 	group.GET("/getBlockInfo", gethApi.GetBlock)
 	group.GET("/transactions", gethApi.GetTransactions)
+	group.POST("/transactionsByBlock", gethApi.TransactionsByBlock)
 
 }
