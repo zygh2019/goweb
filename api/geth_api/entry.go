@@ -5,8 +5,6 @@ import (
 	"awesomeProject1/models/res"
 	"context"
 	"crypto/ecdsa"
-	"fmt"
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -375,35 +373,40 @@ func (a GethApi) TokenTransfer(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(gasPrice) // 23256
 	toAddress := common.HexToAddress(param.Receiver)
 
 	transferFnSignature := []byte("transfer(address,uint256)")
 	hash := sha3.NewLegacyKeccak256()
 	hash.Write(transferFnSignature)
 	methodID := hash.Sum(nil)[:4]
-	fmt.Println(hexutil.Encode(methodID)) // 0xa9059cbb
+
 	paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
-	fmt.Println(hexutil.Encode(paddedAddress)) // 0x0000000000000000000000004592d8f8d7b001e72cb26a73e4fa1806a51ac79d
-	amount := new(big.Int)
-	amount.SetString("100000000000000000000", 10) // 1000 tokens
-	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
-	fmt.Println(hexutil.Encode(paddedAmount)) // 0x00000000000000000000000000000000000000000000003635c9adc5dea00000
+	// 定义 1 ETH 对应的 wei 值
+	oneETHInWei := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
+	//转换成float类型
+	flowtypeWEi := new(big.Float).SetInt(oneETHInWei)
+	//将param转换成float
+	paramAmount := new(big.Float)
+	paramAmount.SetString(param.Amount)
+	//计算最终的wei值
+	weiAmount := new(big.Int)
+	flowtypeWEi.Mul(flowtypeWEi, paramAmount).Int(weiAmount)
+	paddedAmount := common.LeftPadBytes(weiAmount.Bytes(), 32)
 	var data []byte
 	data = append(data, methodID...)
 	data = append(data, paddedAddress...)
 	data = append(data, paddedAmount...)
 
-	gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
-		To:   &toAddress,
-		Data: data,
-	})
-	if err != nil {
-		logrus.Error(err)
-		res.FailWithMsg(err.Error(), c)
-		return
-	}
-	fmt.Println(gasLimit) // 23256
+	//gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
+	//	To:   &toAddress,
+	//	Data: data,
+	//})
+	//if err != nil {
+	//	logrus.Error(err)
+	//	res.FailWithMsg(err.Error(), c)
+	//	return
+	//}
+	gasLimit := uint64(51000)
 	tokenAddress := common.HexToAddress(globle.Config.GethConfig.Contracts)
 	tx := types.NewTransaction(nonce, tokenAddress, value, gasLimit, gasPrice, data)
 
