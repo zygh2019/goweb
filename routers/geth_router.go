@@ -24,4 +24,10 @@ func (r RouterGroup) EthClientRouters() {
 	以太坊转账
 	*/
 	group.POST("/transfer", gethApi.Transfer)
+
+	/**
+	代币转账
+	*/
+	group.POST("/tokenTransfer", gethApi.TokenTransfer)
+
 }

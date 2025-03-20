@@ -5,6 +5,8 @@ import (
 	"awesomeProject1/models/res"
 	"context"
 	"crypto/ecdsa"
+	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -12,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/sha3"
 	"log"
 	"math"
 	"math/big"
@@ -38,7 +41,7 @@ func (GethApi) GetBlock(c *gin.Context) {
 	block, _ := header.BlockByNumber(context.Background(), blockNumber)
 
 	res.OkWithData(map[string]any{
-		"区块号":       block.Number(),
+		"区块号":         block.Number(),
 		"区块时间戳":     block.Time(),
 		"交易的区块hash": block.Hash().Hex(),
 		"区块链摘要":     block.Difficulty(),
@@ -331,5 +334,101 @@ func (a GethApi) Transfer(c *gin.Context) {
 	}
 	globle.DB.Create(transferLog)
 	res.OkWithData(transferLog, c)
+
+}
+
+func (a GethApi) TokenTransfer(c *gin.Context) {
+
+	param := &struct {
+		Sender   string `json:"sender" binding:"required"`
+		Receiver string `json:"receiver" binding:"required"`
+		Amount   string `json:"amount" binding:"required"`
+	}{}
+	err := c.ShouldBind(param)
+	if err != nil {
+		errors := res.ValidateErrors(err, param)
+		logrus.Error(errors)
+		res.FailWithMsg(errors, c)
+		return
+
+	}
+	client, err := ethclient.Dial(globle.Config.GethConfig.GetGatewayAddr())
+
+	privateKey, err := crypto.HexToECDSA(param.Sender)
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+	value := big.NewInt(0) // in wei (0 eth)
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(gasPrice) // 23256
+	toAddress := common.HexToAddress(param.Receiver)
+
+	transferFnSignature := []byte("transfer(address,uint256)")
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(transferFnSignature)
+	methodID := hash.Sum(nil)[:4]
+	fmt.Println(hexutil.Encode(methodID)) // 0xa9059cbb
+	paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
+	fmt.Println(hexutil.Encode(paddedAddress)) // 0x0000000000000000000000004592d8f8d7b001e72cb26a73e4fa1806a51ac79d
+	amount := new(big.Int)
+	amount.SetString("100000000000000000000", 10) // 1000 tokens
+	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
+	fmt.Println(hexutil.Encode(paddedAmount)) // 0x00000000000000000000000000000000000000000000003635c9adc5dea00000
+	var data []byte
+	data = append(data, methodID...)
+	data = append(data, paddedAddress...)
+	data = append(data, paddedAmount...)
+
+	gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
+		To:   &toAddress,
+		Data: data,
+	})
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	fmt.Println(gasLimit) // 23256
+	tokenAddress := common.HexToAddress(globle.Config.GethConfig.Contracts)
+	tx := types.NewTransaction(nonce, tokenAddress, value, gasLimit, gasPrice, data)
+
+	chainID, err := client.ChainID(context.Background())
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+
+	signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainID), privateKey)
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		logrus.Error(err)
+		res.FailWithMsg(err.Error(), c)
+		return
+	}
+
+	res.OkWithData(map[string]any{
+		"value": value.String(),
+	}, c)
 
 }
