@@ -3,8 +3,16 @@ package geth_api
 import (
 	"awesomeProject1/globle"
 	"awesomeProject1/models/res"
+	"awesomeProject1/store"
 	"context"
 	"crypto/ecdsa"
+	"fmt"
+	"log"
+	"math"
+	"math/big"
+	"strconv"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -13,10 +21,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/sha3"
-	"log"
-	"math"
-	"math/big"
-	"strconv"
 )
 
 type GethApi struct {
@@ -39,7 +43,7 @@ func (GethApi) GetBlock(c *gin.Context) {
 	block, _ := header.BlockByNumber(context.Background(), blockNumber)
 
 	res.OkWithData(map[string]any{
-		"区块号":         block.Number(),
+		"区块号":       block.Number(),
 		"区块时间戳":     block.Time(),
 		"交易的区块hash": block.Hash().Hex(),
 		"区块链摘要":     block.Difficulty(),
@@ -179,6 +183,7 @@ func (a GethApi) CreatePurse(c *gin.Context) {
 		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
 	}
 	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	
 	//去除不需要的自负
 	publicKey16 := hexutil.Encode(publicKeyBytes)[4:]
 
@@ -206,6 +211,7 @@ func (a GethApi) GetBalance(c *gin.Context) {
 	*/
 	res.OkWithData(BigInt2StringBalance(balance), c)
 }
+
 
 // 进行转换
 func BigInt2StringBalance(balance *big.Int) *big.Float {
@@ -397,15 +403,15 @@ func (a GethApi) TokenTransfer(c *gin.Context) {
 	data = append(data, paddedAddress...)
 	data = append(data, paddedAmount...)
 
-	//gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
-	//	To:   &toAddress,
-	//	Data: data,
-	//})
-	//if err != nil {
-	//	logrus.Error(err)
-	//	res.FailWithMsg(err.Error(), c)
-	//	return
-	//}
+	// gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
+	// 	To:   &toAddress,
+	// 	Data: data,
+	// })
+	// if err != nil {
+	// 	logrus.Error(err)
+	// 	res.FailWithMsg(err.Error(), c)
+	// 	return
+	// }
 	gasLimit := uint64(51000)
 	tokenAddress := common.HexToAddress(globle.Config.GethConfig.Contracts)
 	tx := types.NewTransaction(nonce, tokenAddress, value, gasLimit, gasPrice, data)
@@ -434,4 +440,62 @@ func (a GethApi) TokenTransfer(c *gin.Context) {
 		"value": value.String(),
 	}, c)
 
+}
+
+func (a GethApi) AbiTransfer(c *gin.Context) {
+	client, err := ethclient.Dial("https://eth-sepolia.g.alchemy.com/v2/<apikey>")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// privateKey, err := crypto.GenerateKey()
+	// privateKeyBytes := crypto.FromECDSA(privateKey)
+	// privateKeyHex := hex.EncodeToString(privateKeyBytes)
+	// fmt.Println("Private Key:", privateKeyHex)
+	privateKey, err := crypto.HexToECDSA("<your private key>")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	if err != nil {
+		log.Fatal(err)
+	}
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)     // in wei
+	auth.GasLimit = uint64(300000) // in units
+	auth.GasPrice = gasPrice
+
+	input := "1.0"
+	address, tx, instance, err := store.DeployStore(auth, client, input)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(address.Hex())
+	fmt.Println(tx.Hash().Hex())
+
+	_ = instance
 }

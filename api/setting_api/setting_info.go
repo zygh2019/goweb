@@ -26,6 +26,7 @@ func (SettingApi) SettingInfoView(c *gin.Context) {
 		res.FailWithMsg("错误", c)
 		return
 	}
+	
 	res.OkWithData(map[string]any{
 		"user":   user,
 		"user2":  user1,
@@ -39,7 +40,7 @@ func (SettingApi) SettingInfoView(c *gin.Context) {
 func (SettingApi) SettingInfoView2(c *gin.Context) {
 	//没有就空字符串
 	user := c.PostForm("user")
-
+	
 	defuser := c.DefaultPostForm("user", "default")
 	a, _ := c.MultipartForm()
 	res.OkWithData(map[string]any{
@@ -58,7 +59,7 @@ type Email struct {
 }
 
 func (SettingApi) SettingInfoView3(c *gin.Context) {
-
+	
 	email := Email{}
 	if err := c.ShouldBindJSON(&email); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -97,7 +98,7 @@ func (u UserDetail) BeforeCreate(scope *gorm.DB) error {
 }
 func (SettingApi) SettingInfoView5(c *gin.Context) {
 	user := []UserDetail{}
-
+	
 	err := c.ShouldBind(&user)
 	if err != nil {
 		logrus.Error(err)

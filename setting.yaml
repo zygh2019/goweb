@@ -23,8 +23,8 @@ logger:
 #  url: https://ethereum-mainnet.core.chainstack.com
 #  key: 5ba73a21a14d09144449f263a283f6bf
 geth_gateway:
-  url: http://127.0.0.1:7546
-  key:
+  url: https://sepolia.infura.io/v3
+  key: 1362c0754f2f4273960aba3287829fdb
   contracts: 0xDec744d901E9001115Be5b707b3538Ce27119E92
 
 

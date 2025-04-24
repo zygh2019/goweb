@@ -37,8 +37,9 @@ func InitRouter() *gin.Engine {
 	group := router.Group("api")
 	//group.Use(errorMiddleware())
 	routerGroup := RouterGroup{group}
-
+	
 	routerGroup.SettingRouters()
 	routerGroup.EthClientRouters()
 	return router
 }
+

@@ -1,0 +1,48 @@
+GET http://localhost:8080/ping
+User-Agent: IntelliJ HTTP Client/GoLand 2024.3.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-03-11T115102.200.json
+
+###
+
+GET http://localhost:8080/ping
+User-Agent: IntelliJ HTTP Client/GoLand 2024.3.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-03-11T115059.200.json
+
+###
+
+GET http://localhost:8080/ping
+User-Agent: IntelliJ HTTP Client/GoLand 2024.3.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+<> 2025-03-11T115044.404.txt
+
+###
+
+GET http://localhost:8080/info
+User-Agent: IntelliJ HTTP Client/GoLand 2024.3.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+###
+
+GET http://localhost:8080/info
+User-Agent: IntelliJ HTTP Client/GoLand 2024.3.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+###
+
+GET http://localhost:8080/info
+User-Agent: IntelliJ HTTP Client/GoLand 2024.3.3
+Accept-Encoding: br, deflate, gzip, x-gzip
+Accept: */*
+
+###
+

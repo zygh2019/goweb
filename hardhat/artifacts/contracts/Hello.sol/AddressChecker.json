@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "AddressChecker",
+  "sourceName": "contracts/Hello.sol",
+  "abi": [],
+  "bytecode": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea26469706673582212201af403f0f96d1c17de5e0a21b9c90db5b8116e3e25ef8709e81fa441dec10c4464736f6c634300081c0033",
+  "deployedBytecode": "0x6080604052600080fdfea26469706673582212201af403f0f96d1c17de5e0a21b9c90db5b8116e3e25ef8709e81fa441dec10c4464736f6c634300081c0033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

@@ -13,6 +13,7 @@ describe("LiuToken Contract", function () {
 
     it("Should assign the total supply of tokens to the owner", async function () {
         const ownerBalance = await token.balanceOf(owner.address);
+        
         expect(await token.totalSupply()).to.equal(ownerBalance);
     });
 
@@ -28,7 +29,7 @@ describe("LiuToken Contract", function () {
         await expect(
             token.connect(addr1).transfer(owner.address, 1)
         ).to.be.revertedWith("Insufficient balance");
-
+        
         expect(await token.balanceOf(owner.address)).to.equal(initialOwnerBalance);
     });
 

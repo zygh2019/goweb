@@ -9,7 +9,7 @@ contract LiuToken is IERC20 {
     string public symbol;    // 代币符号
     uint8 public decimals;       // 小数位数，标准为18位
     uint256 private _totalSupply;     // 总供应量
-
+    
     // 账户余额映射
     mapping(address => uint256) private _balances;
     // 授权映射：存储授权的额度
